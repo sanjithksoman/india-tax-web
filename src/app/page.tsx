@@ -85,6 +85,7 @@ export default function Dashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedFY, setSelectedFY] = useState<string>("");
   const [tripTab, setTripTab] = useState<"trips" | "fy">("trips");
+  const [tripMemberFilter, setTripMemberFilter] = useState<string>("ALL");
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [summaryText, setSummaryText] = useState("");
@@ -284,6 +285,15 @@ export default function Dashboard() {
 
     return result.sort((a, b) => new Date(b.arrivalDate).getTime() - new Date(a.arrivalDate).getTime());
   })();
+
+  /* ─── Filtered Trips by Member ─── */
+  const filteredTrips = trips.filter((t) =>
+    tripMemberFilter === "ALL" ? true : t.member.name === tripMemberFilter
+  );
+
+  const filteredEnteredTrips = enteredTrips.filter((et) =>
+    tripMemberFilter === "ALL" ? true : et.memberName === tripMemberFilter
+  );
 
   /* ─── Export Excel ─── */
   const handleExport = async () => {
@@ -651,20 +661,42 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {/* Sub-Tabs: Trips vs FY Breakdown */}
-              <div className="sub-tab-bar mb-4">
-                <button
-                  className={`sub-tab-btn ${tripTab === "trips" ? "active" : ""}`}
-                  onClick={() => setTripTab("trips")}
-                >
-                  ✈️ Trips
-                </button>
-                <button
-                  className={`sub-tab-btn ${tripTab === "fy" ? "active" : ""}`}
-                  onClick={() => setTripTab("fy")}
-                >
-                  📊 FY Breakdown
-                </button>
+              {/* Sub-Tabs: Trips vs FY Breakdown + Member Filter */}
+              <div className="flex justify-between items-center mb-4" style={{ flexWrap: "wrap", gap: 12 }}>
+                <div className="sub-tab-bar">
+                  <button
+                    className={`sub-tab-btn ${tripTab === "trips" ? "active" : ""}`}
+                    onClick={() => setTripTab("trips")}
+                  >
+                    ✈️ Trips
+                  </button>
+                  <button
+                    className={`sub-tab-btn ${tripTab === "fy" ? "active" : ""}`}
+                    onClick={() => setTripTab("fy")}
+                  >
+                    📊 FY Breakdown
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Filter Member:</span>
+                  <select
+                    value={tripMemberFilter}
+                    onChange={(e) => setTripMemberFilter(e.target.value)}
+                    className="fy-select-dropdown"
+                    style={{
+                      background: "var(--bg-base)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-sm)",
+                      padding: "4px 8px"
+                    }}
+                  >
+                    <option value="ALL">All Members (4)</option>
+                    {MEMBERS.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {loadingTrips ? (
@@ -690,7 +722,7 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {enteredTrips.map((et, index) => (
+                      {filteredEnteredTrips.map((et, index) => (
                         <tr key={et.ids.join("-") || index}>
                           <td data-label="Member">
                             <span className={`member-badge badge-${et.memberName.toLowerCase()}`}>
@@ -737,7 +769,7 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {trips.map((trip) => (
+                      {filteredTrips.map((trip) => (
                         <tr key={trip.id}>
                           <td data-label="Member">
                             <span className={`member-badge badge-${trip.member.name.toLowerCase()}`}>
