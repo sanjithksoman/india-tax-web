@@ -295,6 +295,20 @@ export default function Dashboard() {
     tripMemberFilter === "ALL" ? true : et.memberName === tripMemberFilter
   );
 
+  /* ─── Grouped Trips by FY ─── */
+  const tripsByFY = (() => {
+    const map: Record<string, Trip[]> = {};
+    for (const t of filteredTrips) {
+      if (!map[t.financialYear]) map[t.financialYear] = [];
+      map[t.financialYear].push(t);
+    }
+    return map;
+  })();
+
+  const sortedFYKeys = Object.keys(tripsByFY).sort(
+    (a, b) => parseInt(b.split("-")[0]) - parseInt(a.split("-")[0])
+  );
+
   /* ─── Export Excel ─── */
   const handleExport = async () => {
     try {
@@ -754,45 +768,65 @@ export default function Dashboard() {
                   </table>
                 </div>
               ) : (
-                /* ── TAB 2: FY Breakdown (Split) ── */
-                <div className="table-wrapper">
-                  <table className="responsive-table">
-                    <thead>
-                      <tr>
-                        <th>Member</th>
-                        <th>Arrival</th>
-                        <th>Departure</th>
-                        <th>Days</th>
-                        <th>Financial Year</th>
-                        <th>Notes</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredTrips.map((trip) => (
-                        <tr key={trip.id}>
-                          <td data-label="Member">
-                            <span className={`member-badge badge-${trip.member.name.toLowerCase()}`}>
-                              {trip.member.name}
+                /* ── TAB 2: FY Breakdown (Report Grouped by Financial Year) ── */
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {sortedFYKeys.length === 0 ? (
+                    <div className="empty-state"><p>No trips found for the selected member filter.</p></div>
+                  ) : (
+                    sortedFYKeys.map((fy) => {
+                      const fyTrips = tripsByFY[fy];
+                      const totalDays = fyTrips.reduce((acc, t) => acc + t.daysInIndia, 0);
+                      return (
+                        <div key={fy} className="glass-panel" style={{ background: "var(--bg-base)", padding: 16, marginBottom: 0 }}>
+                          <div className="flex justify-between items-center mb-3">
+                            <h4 style={{ fontSize: 14, fontWeight: 700, color: "var(--gold)" }}>
+                              🗓️ FY {fyShort(fy)} <span className="text-muted" style={{ fontWeight: 400 }}>({fy})</span>
+                            </h4>
+                            <span className="days-pill" style={{ fontSize: 13, padding: "4px 12px" }}>
+                              {totalDays} Days Total
                             </span>
-                          </td>
-                          <td data-label="Arrival">{formatDate(trip.arrivalDate)}</td>
-                          <td data-label="Departure">{formatDate(trip.departureDate)}</td>
-                          <td data-label="Days"><span className="days-pill">{trip.daysInIndia}</span></td>
-                          <td data-label="Financial Year"><span className="fy-tag">{fyShort(trip.financialYear)}</span></td>
-                          <td data-label="Notes" className="text-muted">{trip.notes || "—"}</td>
-                          <td>
-                            <button
-                              className="btn btn-danger"
-                              onClick={() => handleDelete(trip.id)}
-                            >
-                              🗑 Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </div>
+                          <div className="table-wrapper">
+                            <table className="responsive-table">
+                              <thead>
+                                <tr>
+                                  <th>Member</th>
+                                  <th>Arrival</th>
+                                  <th>Departure</th>
+                                  <th>Days</th>
+                                  <th>Notes</th>
+                                  <th></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {fyTrips.map((trip) => (
+                                  <tr key={trip.id}>
+                                    <td data-label="Member">
+                                      <span className={`member-badge badge-${trip.member.name.toLowerCase()}`}>
+                                        {trip.member.name}
+                                      </span>
+                                    </td>
+                                    <td data-label="Arrival">{formatDate(trip.arrivalDate)}</td>
+                                    <td data-label="Departure">{formatDate(trip.departureDate)}</td>
+                                    <td data-label="Days"><span className="days-pill">{trip.daysInIndia}</span></td>
+                                    <td data-label="Notes" className="text-muted">{trip.notes || "—"}</td>
+                                    <td>
+                                      <button
+                                        className="btn btn-danger"
+                                        onClick={() => handleDelete(trip.id)}
+                                      >
+                                        🗑 Delete
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>

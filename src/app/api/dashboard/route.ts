@@ -85,23 +85,25 @@ export async function GET(request: NextRequest) {
       (a, b) => parseInt(b.split("-")[0]) - parseInt(a.split("-")[0])
     );
 
-    // Full aggregation across all FYs (for copy-paste tax summary)
+    // Full aggregation across all FYs (for all members in breakdown)
     const allTrips = await prisma.trip.findMany({
       where: {
-        member: { name: { in: ["SANJITH", "NISHA"] } },
+        member: { name: { in: MEMBERS } },
         financialYear: { in: allFYs },
       },
       include: { member: { select: { name: true } } },
     });
 
-    const fullAgg: Record<string, Record<string, number>> = {
-      SANJITH: {},
-      NISHA: {},
-    };
+    const fullAgg: Record<string, Record<string, number>> = {};
+    for (const m of MEMBERS) {
+      fullAgg[m] = {};
+    }
     for (const trip of allTrips) {
       const name = trip.member.name;
-      fullAgg[name][trip.financialYear] =
-        (fullAgg[name][trip.financialYear] ?? 0) + trip.daysInIndia;
+      if (fullAgg[name]) {
+        fullAgg[name][trip.financialYear] =
+          (fullAgg[name][trip.financialYear] ?? 0) + trip.daysInIndia;
+      }
     }
 
     return NextResponse.json({
