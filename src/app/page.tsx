@@ -15,9 +15,13 @@ interface Trip {
 }
 
 interface DashboardData {
+  selectedFY?: string;
+  prevFY?: string;
   currentFY: string;
   lastFY: string;
   preceding4FYs: string[];
+  selectedFYDays?: Record<string, number>;
+  prevFYDays?: Record<string, number>;
   currentFYDays: Record<string, number>;
   lastFYDays: Record<string, number>;
   preceding4Total: Record<string, number>;
@@ -67,6 +71,7 @@ export default function Dashboard() {
   const { data: session } = useSession();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedFY, setSelectedFY] = useState<string>("");
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [summaryText, setSummaryText] = useState("");
@@ -86,13 +91,17 @@ export default function Dashboard() {
   });
 
   /* ─── Fetch Dashboard ─── */
-  const fetchDashboard = useCallback(async () => {
+  const fetchDashboard = useCallback(async (targetFY?: string) => {
     try {
       setLoadingDash(true);
-      const res = await fetch("/api/dashboard");
+      const url = targetFY ? `/api/dashboard?fy=${encodeURIComponent(targetFY)}` : "/api/dashboard";
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed");
-      const data = await res.json();
+      const data: DashboardData = await res.json();
       setDashboard(data);
+      if (data.selectedFY) {
+        setSelectedFY(data.selectedFY);
+      }
     } catch {
       addToast("Failed to load dashboard", "error");
     } finally {
@@ -294,8 +303,25 @@ export default function Dashboard() {
             </h2>
           </div>
           {dashboard && (
-            <div className="header-fy-badge">
-              🗓 Current FY: {fyShort(dashboard.currentFY)}
+            <div className="header-fy-selector">
+              <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>
+                🗓 FY:
+              </span>
+              <select
+                value={selectedFY || dashboard.selectedFY || dashboard.currentFY}
+                onChange={(e) => {
+                  const newFY = e.target.value;
+                  setSelectedFY(newFY);
+                  fetchDashboard(newFY);
+                }}
+                className="fy-select-dropdown"
+              >
+                {dashboard.allFYs.map((fy) => (
+                  <option key={fy} value={fy}>
+                    {fy} {fy === dashboard.currentFY ? "(Current)" : ""}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
         </header>
@@ -313,9 +339,15 @@ export default function Dashboard() {
               </div>
             ) : dashboard ? (
               <>
-                {/* Current FY */}
+                {/* Selected FY */}
                 <div className="glass-panel">
-                  <h3><span className="panel-icon">🟡</span> Current Financial Year — {dashboard.currentFY}</h3>
+                  <h3>
+                    <span className="panel-icon">🟡</span>
+                    Financial Year — {dashboard.selectedFY || dashboard.currentFY}
+                    {(dashboard.selectedFY || dashboard.currentFY) === dashboard.currentFY && (
+                      <span className="header-fy-selector" style={{ fontSize: 10, padding: "2px 8px", marginLeft: 8 }}>Current</span>
+                    )}
+                  </h3>
                   <div className="metrics-grid">
                     {MEMBERS.map((m) => (
                       <div key={m} className={`metric-card ${MEMBER_COLORS[m]}`}>
@@ -323,7 +355,9 @@ export default function Dashboard() {
                         <div className="member-days-list">
                           <div className="member-day-row">
                             <span className="member-name">Days in India</span>
-                            <span className="days-value">{dashboard.currentFYDays[m] ?? 0}</span>
+                            <span className="days-value">
+                              {dashboard.selectedFYDays?.[m] ?? dashboard.currentFYDays?.[m] ?? 0}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -331,9 +365,9 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Last FY */}
+                {/* Previous FY */}
                 <div className="glass-panel">
-                  <h3><span className="panel-icon">📅</span> Last Financial Year — {dashboard.lastFY}</h3>
+                  <h3><span className="panel-icon">📅</span> Previous Financial Year — {dashboard.prevFY || dashboard.lastFY}</h3>
                   <div className="metrics-grid">
                     {MEMBERS.map((m) => (
                       <div key={m} className={`metric-card ${MEMBER_COLORS[m]}`}>
@@ -341,7 +375,9 @@ export default function Dashboard() {
                         <div className="member-days-list">
                           <div className="member-day-row">
                             <span className="member-name">Days in India</span>
-                            <span className="days-value">{dashboard.lastFYDays[m] ?? 0}</span>
+                            <span className="days-value">
+                              {dashboard.prevFYDays?.[m] ?? dashboard.lastFYDays?.[m] ?? 0}
+                            </span>
                           </div>
                         </div>
                       </div>
