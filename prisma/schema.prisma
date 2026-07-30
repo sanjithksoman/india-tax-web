@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Member {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  trips Trip[]
+
+  @@map("members")
+}
+
+model Trip {
+  id            Int      @id @default(autoincrement())
+  memberId      Int
+  member        Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  arrivalDate   DateTime @db.Date
+  departureDate DateTime @db.Date
+  daysInIndia   Int
+  financialYear String   // e.g. "2023-2024"
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@index([memberId])
+  @@index([financialYear])
+  @@map("trips")
+}
