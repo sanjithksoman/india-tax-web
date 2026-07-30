@@ -41,9 +41,9 @@ export async function POST(request: NextRequest) {
     const arrival = new Date(arrivalDate);
     const departure = new Date(departureDate);
 
-    if (departure <= arrival) {
+    if (departure < arrival) {
       return NextResponse.json(
-        { error: "Departure date must be after arrival date" },
+        { error: "Departure date cannot be before arrival date" },
         { status: 400 }
       );
     }

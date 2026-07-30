@@ -83,7 +83,16 @@ export function getPrecedingFYs(fy: string, count: number): string[] {
  * e.g., Aug 11 → Aug 27 = 16 days
  */
 export function calcDays(arrival: Date, departure: Date): number {
-  return differenceInDays(departure, arrival);
+  const diff = differenceInDays(departure, arrival);
+  if (
+    diff === 0 &&
+    arrival.getFullYear() === departure.getFullYear() &&
+    arrival.getMonth() === departure.getMonth() &&
+    arrival.getDate() === departure.getDate()
+  ) {
+    return 1;
+  }
+  return diff;
 }
 
 /**
