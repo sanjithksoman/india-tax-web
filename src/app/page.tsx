@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface Trip {
@@ -63,7 +63,8 @@ function fyShort(fy: string) {
 }
 
 /* ─── Main Page ─────────────────────────────────────────── */
-export default function Home() {
+export default function Dashboard() {
+  const { data: session } = useSession();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -250,7 +251,7 @@ export default function Home() {
         <div className="sidebar-footer">
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Signed in as</div>
-            <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 600 }}>sanjithksoman@gmail.com</div>
+            <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 600 }}>{session?.user?.email || "Authorised User"}</div>
           </div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 12 }}>
             Indian Financial Year<br />

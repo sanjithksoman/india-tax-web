@@ -1,7 +1,10 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
-const ALLOWED_EMAIL = "sanjithksoman@gmail.com";
+const ALLOWED_EMAILS = [
+  "sanjithksoman@gmail.com",
+  "nisha.sanjith@gmail.com",
+];
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -12,8 +15,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async signIn({ user }) {
-      // Only allow the specific Gmail account
-      if (user.email !== ALLOWED_EMAIL) {
+      if (!user.email || !ALLOWED_EMAILS.includes(user.email.toLowerCase())) {
         return false; // Reject all other accounts
       }
       return true;
