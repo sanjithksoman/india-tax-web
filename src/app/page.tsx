@@ -413,6 +413,7 @@ export default function Dashboard() {
                       type="date"
                       value={form.arrivalDate}
                       onChange={(e) => setForm((f) => ({ ...f, arrivalDate: e.target.value }))}
+                      onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
                       required
                     />
                   </div>
@@ -424,6 +425,7 @@ export default function Dashboard() {
                       type="date"
                       value={form.departureDate}
                       onChange={(e) => setForm((f) => ({ ...f, departureDate: e.target.value }))}
+                      onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
                       required
                     />
                   </div>

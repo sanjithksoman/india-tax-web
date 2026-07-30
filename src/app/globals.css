@@ -361,7 +361,29 @@ body {
   transition: border-color var(--transition), box-shadow var(--transition);
   width: 100%;
   outline: none;
+}
+
+.form-group select {
   -webkit-appearance: none;
+}
+
+.form-group input[type="date"] {
+  color-scheme: dark;
+  cursor: pointer;
+}
+
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85) sepia(0.5) hue-rotate(10deg);
+  cursor: pointer;
+  opacity: 0.85;
+  padding: 4px;
+  border-radius: 4px;
+  transition: opacity var(--transition), background var(--transition);
+}
+
+.form-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background: var(--bg-hover);
 }
 
 .form-group input:focus,
