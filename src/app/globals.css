@@ -227,6 +227,44 @@ body {
   font-weight: 500;
 }
 
+/* ─── Sub-Tabs ───────────────────────────────────────────── */
+.sub-tab-bar {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-base);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  width: fit-content;
+}
+
+.sub-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sub-tab-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.sub-tab-btn.active {
+  background: linear-gradient(135deg, var(--bg-elevated), var(--bg-hover));
+  color: var(--gold);
+  border: 1px solid var(--border-accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 .page-body {
   padding: 28px 32px;
   flex: 1;

@@ -14,6 +14,16 @@ interface Trip {
   member: { name: string };
 }
 
+interface UnsplitTrip {
+  ids: number[];
+  memberName: string;
+  arrivalDate: string;
+  departureDate: string;
+  daysInIndia: number;
+  financialYears: string[];
+  notes?: string;
+}
+
 interface DashboardData {
   selectedFY?: string;
   prevFY?: string;
@@ -72,6 +82,7 @@ export default function Dashboard() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedFY, setSelectedFY] = useState<string>("");
+  const [tripTab, setTripTab] = useState<"trips" | "fy">("trips");
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [summaryText, setSummaryText] = useState("");
@@ -194,6 +205,61 @@ export default function Dashboard() {
       addToast("Failed to delete trip", "error");
     }
   };
+
+  /* ─── Delete Multiple (Entered Trip) ─── */
+  const handleDeleteMultiple = async (ids: number[]) => {
+    if (!confirm(`Are you sure you want to delete this trip record?`)) return;
+    try {
+      await Promise.all(ids.map((id) => fetch(`/api/trips/${id}`, { method: "DELETE" })));
+      addToast("✓ Trip deleted", "success");
+      fetchTrips();
+      fetchDashboard(selectedFY);
+    } catch {
+      addToast("Failed to delete trip", "error");
+    }
+  };
+
+  /* ─── Build Entered (Un-split) Trips ─── */
+  const enteredTrips: UnsplitTrip[] = (() => {
+    if (!trips || trips.length === 0) return [];
+    const sorted = [...trips].sort((a, b) => {
+      if (a.member.name !== b.member.name) return a.member.name.localeCompare(b.member.name);
+      return new Date(a.arrivalDate).getTime() - new Date(b.arrivalDate).getTime();
+    });
+
+    const result: UnsplitTrip[] = [];
+    for (const t of sorted) {
+      const prev = result[result.length - 1];
+      const arrStr = new Date(t.arrivalDate).toISOString().split("T")[0];
+      const depStr = new Date(t.departureDate).toISOString().split("T")[0];
+
+      if (
+        prev &&
+        prev.memberName === t.member.name &&
+        prev.departureDate === arrStr &&
+        (prev.notes || "") === (t.notes || "")
+      ) {
+        prev.ids.push(t.id);
+        prev.departureDate = depStr;
+        prev.daysInIndia += t.daysInIndia;
+        if (!prev.financialYears.includes(t.financialYear)) {
+          prev.financialYears.push(t.financialYear);
+        }
+      } else {
+        result.push({
+          ids: [t.id],
+          memberName: t.member.name,
+          arrivalDate: arrStr,
+          departureDate: depStr,
+          daysInIndia: t.daysInIndia,
+          financialYears: [t.financialYear],
+          notes: t.notes ?? undefined,
+        });
+      }
+    }
+
+    return result.sort((a, b) => new Date(b.arrivalDate).getTime() - new Date(a.arrivalDate).getTime());
+  })();
 
   /* ─── Export Excel ─── */
   const handleExport = async () => {
@@ -523,6 +589,22 @@ export default function Dashboard() {
                 </button>
               </div>
 
+              {/* Sub-Tabs: Trips vs FY Breakdown */}
+              <div className="sub-tab-bar mb-4">
+                <button
+                  className={`sub-tab-btn ${tripTab === "trips" ? "active" : ""}`}
+                  onClick={() => setTripTab("trips")}
+                >
+                  ✈️ Trips
+                </button>
+                <button
+                  className={`sub-tab-btn ${tripTab === "fy" ? "active" : ""}`}
+                  onClick={() => setTripTab("fy")}
+                >
+                  📊 FY Breakdown
+                </button>
+              </div>
+
               {loadingTrips ? (
                 <div className="empty-state"><span className="loader" style={{ width: 28, height: 28 }} /></div>
               ) : trips.length === 0 ? (
@@ -530,7 +612,55 @@ export default function Dashboard() {
                   <span className="empty-icon">✈️</span>
                   <p>No trips recorded yet. Add your first trip!</p>
                 </div>
+              ) : tripTab === "trips" ? (
+                /* ── TAB 1: Entered Trips (Un-split) ── */
+                <div className="table-wrapper">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Member</th>
+                        <th>Arrival</th>
+                        <th>Departure</th>
+                        <th>Total Days</th>
+                        <th>Financial Years</th>
+                        <th>Notes</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {enteredTrips.map((et, index) => (
+                        <tr key={et.ids.join("-") || index}>
+                          <td>
+                            <span className={`member-badge badge-${et.memberName.toLowerCase()}`}>
+                              {et.memberName}
+                            </span>
+                          </td>
+                          <td>{formatDate(et.arrivalDate)}</td>
+                          <td>{formatDate(et.departureDate)}</td>
+                          <td><span className="days-pill">{et.daysInIndia}</span></td>
+                          <td>
+                            <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
+                              {et.financialYears.map((fy) => (
+                                <span key={fy} className="fy-tag">{fyShort(fy)}</span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="text-muted">{et.notes || "—"}</td>
+                          <td>
+                            <button
+                              className="btn btn-danger"
+                              onClick={() => handleDeleteMultiple(et.ids)}
+                            >
+                              🗑 Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
+                /* ── TAB 2: FY Breakdown (Split) ── */
                 <div className="table-wrapper">
                   <table>
                     <thead>
