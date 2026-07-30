@@ -97,7 +97,7 @@ export default function Dashboard() {
 
   // Form state
   const [form, setForm] = useState({
-    memberName: "SANJITH",
+    selectedMembers: ["SANJITH"] as string[],
     arrivalDate: "",
     departureDate: "",
     notes: "",
@@ -176,31 +176,38 @@ export default function Dashboard() {
   /* ─── Add Trip ─── */
   const handleAddTrip = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.selectedMembers.length === 0) {
+      addToast("Please select at least one family member", "error");
+      return;
+    }
     if (!form.arrivalDate || !form.departureDate) {
       addToast("Please fill in all dates", "error");
       return;
     }
     try {
       setSubmitting(true);
-      const res = await fetch("/api/trips", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed");
-      }
-      const data = await res.json();
-      const tripCount = data.trips.length;
-      addToast(
-        tripCount > 1
-          ? `✓ Trip added (split across ${tripCount} financial years)`
-          : `✓ Trip added for ${form.memberName}`,
-        "success"
+      const promises = form.selectedMembers.map((memberName) =>
+        fetch("/api/trips", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            memberName,
+            arrivalDate: form.arrivalDate,
+            departureDate: form.departureDate,
+            notes: form.notes,
+          }),
+        })
       );
+      const responses = await Promise.all(promises);
+      for (const res of responses) {
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Failed");
+        }
+      }
+      addToast(`✓ Trip added for ${form.selectedMembers.join(", ")}`, "success");
       setForm((f) => ({ ...f, arrivalDate: "", departureDate: "", notes: "" }));
-      fetchDashboard();
+      fetchDashboard(selectedFY);
       if (activeSection === "trips") fetchTrips();
     } catch (err: unknown) {
       addToast(err instanceof Error ? err.message : "Failed to add trip", "error");
@@ -530,18 +537,54 @@ export default function Dashboard() {
               <h3><span className="panel-icon">✈️</span> Add New Trip</h3>
               <form onSubmit={handleAddTrip}>
                 <div className="form-grid">
-                  <div className="form-group">
-                    <label htmlFor="memberName">Family Member</label>
-                    <select
-                      id="memberName"
-                      value={form.memberName}
-                      onChange={(e) => setForm((f) => ({ ...f, memberName: e.target.value }))}
-                      required
-                    >
-                      {MEMBERS.map((m) => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
+                  <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                    <div className="flex justify-between items-center mb-2">
+                      <label>Family Members (Select one or more)</label>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ padding: "3px 10px", fontSize: 11 }}
+                        onClick={() => {
+                          if (form.selectedMembers.length === MEMBERS.length) {
+                            setForm((f) => ({ ...f, selectedMembers: ["SANJITH"] }));
+                          } else {
+                            setForm((f) => ({ ...f, selectedMembers: [...MEMBERS] }));
+                          }
+                        }}
+                      >
+                        {form.selectedMembers.length === MEMBERS.length ? "Deselect All" : "Select All (4 Members)"}
+                      </button>
+                    </div>
+                    <div className="member-checkbox-grid">
+                      {MEMBERS.map((m) => {
+                        const isChecked = form.selectedMembers.includes(m);
+                        return (
+                          <label
+                            key={m}
+                            className={`member-checkbox-pill ${isChecked ? "active" : ""} badge-${m.toLowerCase()}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setForm((f) => {
+                                  let next = [...f.selectedMembers];
+                                  if (checked) {
+                                    if (!next.includes(m)) next.push(m);
+                                  } else {
+                                    next = next.filter((x) => x !== m);
+                                  }
+                                  return { ...f, selectedMembers: next };
+                                });
+                              }}
+                            />
+                            <span className="checkbox-custom">{isChecked ? "✓" : ""}</span>
+                            <span>{m}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   <div className="form-group">
