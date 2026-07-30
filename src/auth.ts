@@ -1,11 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
-const ALLOWED_EMAILS = [
-  "sanjithksoman@gmail.com",
-  "nisha.sanjith@gmail.com",
-];
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Google({
@@ -15,8 +10,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async signIn({ user }) {
-      if (!user.email || !ALLOWED_EMAILS.includes(user.email.toLowerCase())) {
-        return false; // Reject all other accounts
+      const allowedEnv = process.env.ALLOWED_EMAILS || "";
+      const allowedEmails = allowedEnv
+        .split(",")
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (!user.email || !allowedEmails.includes(user.email.toLowerCase())) {
+        return false; // Reject unauthorized accounts
       }
       return true;
     },
