@@ -615,7 +615,7 @@ export default function Dashboard() {
               ) : tripTab === "trips" ? (
                 /* ── TAB 1: Entered Trips (Un-split) ── */
                 <div className="table-wrapper">
-                  <table>
+                  <table className="responsive-table">
                     <thead>
                       <tr>
                         <th>Member</th>
@@ -630,22 +630,22 @@ export default function Dashboard() {
                     <tbody>
                       {enteredTrips.map((et, index) => (
                         <tr key={et.ids.join("-") || index}>
-                          <td>
+                          <td data-label="Member">
                             <span className={`member-badge badge-${et.memberName.toLowerCase()}`}>
                               {et.memberName}
                             </span>
                           </td>
-                          <td>{formatDate(et.arrivalDate)}</td>
-                          <td>{formatDate(et.departureDate)}</td>
-                          <td><span className="days-pill">{et.daysInIndia}</span></td>
-                          <td>
+                          <td data-label="Arrival">{formatDate(et.arrivalDate)}</td>
+                          <td data-label="Departure">{formatDate(et.departureDate)}</td>
+                          <td data-label="Total Days"><span className="days-pill">{et.daysInIndia}</span></td>
+                          <td data-label="FYs Covered">
                             <div className="flex gap-2" style={{ flexWrap: "wrap" }}>
                               {et.financialYears.map((fy) => (
                                 <span key={fy} className="fy-tag">{fyShort(fy)}</span>
                               ))}
                             </div>
                           </td>
-                          <td className="text-muted">{et.notes || "—"}</td>
+                          <td data-label="Notes" className="text-muted">{et.notes || "—"}</td>
                           <td>
                             <button
                               className="btn btn-danger"
@@ -662,7 +662,7 @@ export default function Dashboard() {
               ) : (
                 /* ── TAB 2: FY Breakdown (Split) ── */
                 <div className="table-wrapper">
-                  <table>
+                  <table className="responsive-table">
                     <thead>
                       <tr>
                         <th>Member</th>
@@ -677,16 +677,16 @@ export default function Dashboard() {
                     <tbody>
                       {trips.map((trip) => (
                         <tr key={trip.id}>
-                          <td>
+                          <td data-label="Member">
                             <span className={`member-badge badge-${trip.member.name.toLowerCase()}`}>
                               {trip.member.name}
                             </span>
                           </td>
-                          <td>{formatDate(trip.arrivalDate)}</td>
-                          <td>{formatDate(trip.departureDate)}</td>
-                          <td><span className="days-pill">{trip.daysInIndia}</span></td>
-                          <td><span className="fy-tag">{fyShort(trip.financialYear)}</span></td>
-                          <td className="text-muted">{trip.notes || "—"}</td>
+                          <td data-label="Arrival">{formatDate(trip.arrivalDate)}</td>
+                          <td data-label="Departure">{formatDate(trip.departureDate)}</td>
+                          <td data-label="Days"><span className="days-pill">{trip.daysInIndia}</span></td>
+                          <td data-label="Financial Year"><span className="fy-tag">{fyShort(trip.financialYear)}</span></td>
+                          <td data-label="Notes" className="text-muted">{trip.notes || "—"}</td>
                           <td>
                             <button
                               className="btn btn-danger"
