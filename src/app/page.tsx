@@ -66,6 +66,7 @@ function fyShort(fy: string) {
 export default function Dashboard() {
   const { data: session } = useSession();
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [summaryText, setSummaryText] = useState("");
@@ -228,8 +229,14 @@ export default function Dashboard() {
   /* ─── Render ─────────────────────────────────────────── */
   return (
     <div className="app-shell">
+      {/* ── Mobile Backdrop Overlay ── */}
+      <div
+        className={`mobile-backdrop ${mobileMenuOpen ? "open" : ""}`}
+        onClick={() => setMobileMenuOpen(false)}
+      />
+
       {/* ── Sidebar ── */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${mobileMenuOpen ? "open" : ""}`}>
         <div className="sidebar-logo">
           <span className="logo-icon">🇮🇳</span>
           <h1>India Travel</h1>
@@ -241,7 +248,10 @@ export default function Dashboard() {
             <button
               key={item.id}
               className={`nav-item ${activeSection === item.id ? "active" : ""}`}
-              onClick={() => setActiveSection(item.id)}
+              onClick={() => {
+                setActiveSection(item.id);
+                setMobileMenuOpen(false);
+              }}
             >
               <span className="nav-icon">{item.icon}</span>
               {item.label}
@@ -270,10 +280,19 @@ export default function Dashboard() {
       {/* ── Main ── */}
       <main className="main-content">
         <header className="page-header">
-          <h2>
-            {navItems.find((n) => n.id === activeSection)?.icon}{" "}
-            {navItems.find((n) => n.id === activeSection)?.label}
-          </h2>
+          <div className="flex items-center gap-3">
+            <button
+              className="menu-toggle-btn"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? "✕" : "☰"}
+            </button>
+            <h2>
+              {navItems.find((n) => n.id === activeSection)?.icon}{" "}
+              {navItems.find((n) => n.id === activeSection)?.label}
+            </h2>
+          </div>
           {dashboard && (
             <div className="header-fy-badge">
               🗓 Current FY: {fyShort(dashboard.currentFY)}
@@ -577,6 +596,23 @@ export default function Dashboard() {
 
         </div>
       </main>
+
+      {/* ── Mobile Bottom Navigation Bar ── */}
+      <nav className="mobile-bottom-nav">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            className={`mobile-nav-btn ${activeSection === item.id ? "active" : ""}`}
+            onClick={() => {
+              setActiveSection(item.id);
+              setMobileMenuOpen(false);
+            }}
+          >
+            <span className="nav-icon">{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
 
       {/* ── Toast Container ── */}
       <div className="toast-container">
