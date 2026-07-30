@@ -165,3 +165,67 @@ export function generateSummaryText(
 
   return lines.join("\n").trimEnd();
 }
+
+/**
+ * Flexibly parses date text copied from Excel, CSV, or clipboard into YYYY-MM-DD format.
+ * Supports:
+ *  - Excel serial numbers (e.g. 45514)
+ *  - YYYY-MM-DD / YYYY/MM/DD
+ *  - DD/MM/YYYY / DD-MM-YYYY / DD.MM.YYYY
+ *  - DD-MMM-YYYY / 11 Aug 2024 / 11 August 2024
+ */
+export function parsePastedDate(text: string): string | null {
+  if (!text) return null;
+  const cleaned = text.trim();
+
+  // 1. Excel serial number (e.g. 45514)
+  if (/^\d{5}$/.test(cleaned)) {
+    const serial = parseInt(cleaned, 10);
+    const utcDays = serial - 25569;
+    const date = new Date(utcDays * 86400 * 1000);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split("T")[0];
+    }
+  }
+
+  // 2. YYYY-MM-DD or YYYY/MM/DD
+  if (/^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/.test(cleaned)) {
+    const d = new Date(cleaned.replace(/\./g, "-").replace(/\//g, "-"));
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().split("T")[0];
+    }
+  }
+
+  // 3. DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+  const ddmmyyyy = cleaned.match(/^(\d{1,2})[-/. ](\d{1,2})[-/. ](\d{4})/);
+  if (ddmmyyyy) {
+    const p1 = parseInt(ddmmyyyy[1], 10);
+    const p2 = parseInt(ddmmyyyy[2], 10);
+    const year = parseInt(ddmmyyyy[3], 10);
+    let day = p1;
+    let month = p2;
+    if (p1 <= 12 && p2 > 12) {
+      day = p2;
+      month = p1;
+    }
+    const d = new Date(year, month - 1, day);
+    if (!isNaN(d.getTime())) {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+  }
+
+  // 4. Fallback JS Date parse (e.g. 11-Aug-2024, Aug 11 2024)
+  const d = new Date(cleaned);
+  if (!isNaN(d.getTime())) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  return null;
+}
+

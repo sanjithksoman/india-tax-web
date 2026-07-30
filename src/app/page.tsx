@@ -63,6 +63,8 @@ function useToast() {
 }
 
 /* ─── Utility ───────────────────────────────────────────── */
+import { parsePastedDate } from "@/lib/financialYear";
+
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-IN", {
     day: "2-digit",
@@ -100,6 +102,21 @@ export default function Dashboard() {
     departureDate: "",
     notes: "",
   });
+
+  const handleDatePaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    field: "arrivalDate" | "departureDate"
+  ) => {
+    const pastedText = e.clipboardData.getData("text");
+    const parsed = parsePastedDate(pastedText);
+    if (parsed) {
+      e.preventDefault();
+      setForm((f) => ({ ...f, [field]: parsed }));
+      addToast(`✓ Pasted date: ${parsed}`, "success");
+    } else {
+      addToast("Could not parse pasted date", "error");
+    }
+  };
 
   /* ─── Fetch Dashboard ─── */
   const fetchDashboard = useCallback(async (targetFY?: string) => {
@@ -535,6 +552,7 @@ export default function Dashboard() {
                       value={form.arrivalDate}
                       onChange={(e) => setForm((f) => ({ ...f, arrivalDate: e.target.value }))}
                       onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+                      onPaste={(e) => handleDatePaste(e, "arrivalDate")}
                       required
                     />
                   </div>
@@ -547,6 +565,7 @@ export default function Dashboard() {
                       value={form.departureDate}
                       onChange={(e) => setForm((f) => ({ ...f, departureDate: e.target.value }))}
                       onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+                      onPaste={(e) => handleDatePaste(e, "departureDate")}
                       required
                     />
                   </div>
